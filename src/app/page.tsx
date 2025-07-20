@@ -1,103 +1,124 @@
-import Image from "next/image";
+"use client";
+
+import Calculator from "@/app/components/Calculator";
+import {FormEvent, useEffect, useRef, useState} from "react";
+import IState from "@/app/models/state";
+import Paid from "@/app/models/enums/Paid";
+import IFormData from "@/app/models/form_data";
+import {Alert, Card, Col, Container, Form, Row, Button, InputGroup} from "react-bootstrap";
+import UpClient from "@/app/client/up/client";
+import {balance, returns} from "@/app/utils/calculator";
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  /**
+   * React Ref to the input form control for a customer's Personal Access Token.
+   */
+  const apiKeyRef = useRef<HTMLInputElement>(null);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+  /**
+   * Primary state object for the application.
+   */
+  const [state, setState] = useState<IState>({
+    accounts: [],
+    termDeposit: {
+      principal: 10000,
+      rate: 1.10,
+      term: 36,
+      paid: Paid[Paid.Maturity]
+    },
+    error: null
+  })
+
+  /**
+   * State for the "Up Client".
+   */
+  const [upClient, setUpClient] = useState<UpClient | null>(null)
+
+  /**
+   * Effect to attempt to retrieve a list of bank account(s) if the instance of "Up Client" is modified i.e. a
+   * Personal Access Token is submitted.
+   */
+  useEffect(() => {
+    upClient?.get_all_accounts().then(response => {
+      setState((prevState: IState) => {
+        return {
+          ...prevState,
+          accounts: response.data
+        }
+      })
+    }).catch((error: Error) => {
+      setState((prevState) => {
+        return {
+          ...prevState,
+          error: error
+        }
+      })
+    })
+  }, [upClient])
+
+  /**
+   * Handler for the "onPress" event fired by the button purposed to authorize the "Up Client".
+   */
+  const useUpApi = () => {
+    const apiKey = apiKeyRef.current?.value
+    setUpClient(() => apiKey ? new UpClient(apiKey) : null)
+  }
+
+  /**
+   * Handler for the "onChange" event fired by a form control purposed to update the primary application state.
+   * @param {FormEvent} e - The event object passed.
+   */
+  const handleChange = (e: FormEvent) => {
+    const { name, value } = e.target as HTMLInputElement | HTMLSelectElement;
+    const _value = isNaN(Number(value)) ? value : Number(value);
+
+    setState((prevState: IState) => ({
+      ...prevState,
+      termDeposit: {
+        ...prevState.termDeposit,
+        [name as keyof IFormData]: _value
+      },
+    }));
+  };
+
+  return (
+      <div className="flex justify-content-center align-content-center w-screen h-screen">
+        <Container>
+          <Row>
+            <Col>
+              <h3 role="heading">Calculate your returns</h3>
+              <h5 className="mb-2 text-muted" role="heading">Use our deposit and savings calculator to forecast the return on your term deposit or cash investment.</h5>
+              {
+                state.error
+                  ? (<Alert variant="danger">
+                      <h4>An unexpected error was encountered</h4>
+                      <p>{state.error.message}</p>
+                      <code>{state.error.name}: {state.error.stack}</code>
+                    </Alert>)
+                  : (<></>)
+              }
+              <Calculator accounts={state.accounts ?? []} formData={state.termDeposit} handleChange={handleChange}></Calculator>
+            </Col>
+            <Col className="align-content-center">
+              <>
+                <Card.Subtitle className="mb-2">Final balance</Card.Subtitle>
+                <Card.Text>${balance(state.termDeposit).toFixed(2)}</Card.Text>
+                <Card.Subtitle className="mb-2">Total interest earned</Card.Subtitle>
+                <Card.Text>${returns(state.termDeposit).toFixed(2)}</Card.Text>
+                <Alert variant="success">
+                  <Form>
+                    <Form.Label>Your Personal Access Token</Form.Label>
+                    <InputGroup>
+                      <Form.Control ref={apiKeyRef} type="text"></Form.Control>
+                      <Button onClick={useUpApi} variant="success" size="sm">Connect</Button>
+                    </InputGroup>
+                    <Form.Text>Enter your Personal Access Token to see a list of your Up account(s) and their balance in the Calculator.</Form.Text>
+                  </Form>
+                </Alert>
+              </>
+            </Col>
+          </Row>
+        </Container>
+      </div>
+  )
 }
