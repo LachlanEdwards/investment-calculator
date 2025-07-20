@@ -4,10 +4,12 @@ import Calculator from "@/app/components/Calculator";
 import {FormEvent, useEffect, useRef, useState} from "react";
 import IState from "@/app/models/state";
 import Paid from "@/app/models/enums/Paid";
-import IFormData from "@/app/models/form_data";
-import {Alert, Card, Col, Container, Form, Row, Button, InputGroup} from "react-bootstrap";
+import IFormData from "@/app/models/formData";
+import {Alert, Card, Col, Container, Form, Row, Button, InputGroup, ListGroup} from "react-bootstrap";
 import UpClient from "@/app/client/up/client";
-import {balance, returns} from "@/app/utils/calculator";
+import {balance, returns, validateFormData} from "@/app/utils/calculator";
+import ValidationErrorAlert from "@/app/components/ValidationErrorAlert";
+import ExceptionAlert from "@/app/components/ExceptionAlert";
 
 export default function Home() {
   /**
@@ -26,7 +28,8 @@ export default function Home() {
       term: 36,
       paid: Paid[Paid.Maturity]
     },
-    error: null
+    formErrors: [],
+    exception: null
   })
 
   /**
@@ -41,17 +44,11 @@ export default function Home() {
   useEffect(() => {
     upClient?.get_all_accounts().then(response => {
       setState((prevState: IState) => {
-        return {
-          ...prevState,
-          accounts: response.data
-        }
+        return { ...prevState, accounts: response.data }
       })
     }).catch((error: Error) => {
       setState((prevState) => {
-        return {
-          ...prevState,
-          error: error
-        }
+        return { ...prevState,  exception: error }
       })
     })
   }, [upClient])
@@ -72,31 +69,31 @@ export default function Home() {
     const { name, value } = e.target as HTMLInputElement | HTMLSelectElement;
     const _value = isNaN(Number(value)) ? value : Number(value);
 
-    setState((prevState: IState) => ({
-      ...prevState,
-      termDeposit: {
-        ...prevState.termDeposit,
-        [name as keyof IFormData]: _value
-      },
-    }));
+    setState((prevState: IState) => {
+      /** Construct the state object for the updated form data **/
+      const formData = { ...prevState.termDeposit, [name as keyof IFormData]: _value };
+
+      /** Validate the form data before updating the state **/
+      const { hasError, errors } = validateFormData(formData);
+      if (hasError) {
+        e.preventDefault(); e.stopPropagation();
+        return { ...prevState, formErrors: errors }
+      }
+
+      /** If no validation errors are propagated, update the form state and clear any previous errors. **/
+      return { ...prevState, termDeposit: formData, formErrors: [] }
+    });
   };
 
   return (
       <div className="flex justify-content-center align-content-center w-screen h-screen">
         <Container>
+          { state.exception ? (<ExceptionAlert exception={state.exception}/>) : (<></>) }
           <Row>
             <Col>
               <h3 role="heading">Calculate your returns</h3>
               <h5 className="mb-2 text-muted" role="heading">Use our deposit and savings calculator to forecast the return on your term deposit or cash investment.</h5>
-              {
-                state.error
-                  ? (<Alert variant="danger">
-                      <h4>An unexpected error was encountered</h4>
-                      <p>{state.error.message}</p>
-                      <code>{state.error.name}: {state.error.stack}</code>
-                    </Alert>)
-                  : (<></>)
-              }
+              { state.formErrors.length > 0 ? (<ValidationErrorAlert errors={state.formErrors}/>) : (<></>) }
               <Calculator accounts={state.accounts ?? []} formData={state.termDeposit} handleChange={handleChange}></Calculator>
             </Col>
             <Col className="align-content-center">

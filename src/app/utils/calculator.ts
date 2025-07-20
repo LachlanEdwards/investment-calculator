@@ -1,5 +1,25 @@
-import IFormData from "@/app/models/form_data";
+import IFormData from "@/app/models/formData";
 import Paid from "@/app/models/enums/Paid";
+import validators from "@/app/utils/validators/formDataValidator";
+import IFormError from "@/app/models/formError";
+
+/**
+ * Validate updates to a form data object.
+ * @param {IFormData} formData - The form data object.
+ * @return { hasError: boolean; errors: { [p: string]: string } } - An object containing the validation state of the
+ * form data object.
+ */
+const validateFormData = (formData: IFormData) => {
+    const errors: IFormError[] = [];
+
+    for (const validator of validators) {
+        if (!validator.validate(formData))
+            errors.push({ name: validator.name, message: validator.message })
+    }
+
+    const hasError = errors.length > 0
+    return { hasError, errors };
+}
 
 /**
  * Getter for the balance in dollars of the balance invested in the term deposit at maturity.
@@ -42,4 +62,4 @@ const returns = (formData: IFormData): number => {
     return balance(formData) - formData.principal
 }
 
-export { balance, returns }
+export { balance, returns, validateFormData }

@@ -2,7 +2,7 @@ import Form from 'react-bootstrap/Form';
 import Paid from "../models/enums/Paid";
 import type {Account} from "../client/up/types.ts";
 import {FormEvent, useEffect, useRef} from "react";
-import type IFormData from "../models/form_data.ts";
+import type IFormData from "../models/formData.ts";
 import {InputGroup} from "react-bootstrap";
 
 interface IProps {
@@ -32,8 +32,8 @@ export default function Calculator(props: IProps) {
                     <Form.Control
                         name="principal"
                         type="number"
-                        onChange={props.handleChange}
-                        value={props.formData.principal}/>
+                        onBlur={props.handleChange}
+                        defaultValue={props.formData.principal}/>
                     <Form.Select
                         onChange={props.handleChange}
                         name="principal"
@@ -66,8 +66,8 @@ export default function Calculator(props: IProps) {
                     <Form.Control
                         name="rate"
                         type="number"
-                        onChange={props.handleChange}
-                        value={props.formData.rate}/>
+                        onBlur={props.handleChange}
+                        defaultValue={props.formData.rate}/>
                     <InputGroup.Text>% p.a.</InputGroup.Text>
                 </InputGroup>
                 <Form.Text className="text-muted">
@@ -80,8 +80,8 @@ export default function Calculator(props: IProps) {
                     <Form.Control
                         name="term"
                         type="number"
-                        onChange={props.handleChange}
-                        value={props.formData.term}/>
+                        onBlur={props.handleChange}
+                        defaultValue={props.formData.term}/>
                     <InputGroup.Text>months</InputGroup.Text>
                 </InputGroup>
                 <Form.Text className="text-muted">

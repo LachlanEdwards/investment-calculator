@@ -1,6 +1,6 @@
 import type { Account } from "../client/up/types.ts";
 import type { ChangeEvent } from "react";
-import type IFormData from "../models/form_data.ts";
+import type IFormData from "../models/formData.ts";
 interface IProps {
     accounts: Account[];
     form_data: IFormData;
