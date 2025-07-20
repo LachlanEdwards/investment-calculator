@@ -1,6 +1,6 @@
 import {expect, it} from "@jest/globals";
 import IFormData from "@/app/models/formData";
-import returnsTheories from "@/__tests__/data/returns.negative";
+import returnsTheories from "@/__tests__/data/returns.negative.testdata";
 import {validateFormData} from "@/app/utils/calculator";
 
 it('returns the expected validation error', () => {

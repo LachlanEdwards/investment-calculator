@@ -1,7 +1,7 @@
 import {expect, it} from "@jest/globals";
 import IFormData from "@/app/models/formData";
 import {balance, returns} from "@/app/utils/calculator";
-import returnsTheories from "@/__tests__/data/returns.positive";
+import returnsTheories from "@/__tests__/data/returns.positive.testdata";
 
 it('calculates the correct return', () => {
     const theories: { expectedValue: number, formData: IFormData }[] = returnsTheories
